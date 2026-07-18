@@ -1,0 +1,15 @@
+# gitleaks configuration for the agentic-config repo.
+# Extends the default ruleset; adds allowlist entries for known-safe values.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known-safe values in this public config repo"
+regexes = [
+  # LM Studio preset uses a literal placeholder token, not a real secret.
+  '''"ANTHROPIC_AUTH_TOKEN"\s*:\s*"dummy"''',
+]
+paths = [
+  # AgileBits' public 1Password team id appears in socket paths; not a secret.
+  '''config/settings\.json''',
+]

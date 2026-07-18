@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+
+# Home Manager backups (created on switch when a real file is replaced)
+*.backup
+
+# Python (in case a skill grows its own tooling)
+.venv/
+__pycache__/
+*.pyc
+
+# Nix
+result
+result-*
+
+# Local Claude Code project state (never commit)
+.claude/settings.local.json
+.tdd/

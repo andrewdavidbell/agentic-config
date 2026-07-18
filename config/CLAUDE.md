@@ -1,0 +1,3 @@
+- Always use British English spelling and grammar conventions
+- Always use `uv` as the package manager for Python projects
+- Always use `ruff` as the linter for Python projects
