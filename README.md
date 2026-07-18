@@ -12,6 +12,7 @@ via the native `programs.claude-code` and `programs.mcp` modules
 | --- | --- | --- |
 | `config/CLAUDE.md` | `~/.claude/CLAUDE.md` | `programs.claude-code.context` |
 | `skills/tdd/` | `~/.claude/skills/tdd/` | `programs.claude-code.skills.tdd` |
+| `skills/design-patterns/` | `~/.claude/skills/design-patterns/` | `programs.claude-code.skills.design-patterns` |
 | `agents/*.md` | `~/.claude/agents/` | `programs.claude-code.agentsDir` |
 | `scripts/tdd-guard.sh` | `~/.claude/hooks/tdd-guard` (exec) | `programs.claude-code.hooks.tdd-guard` |
 | `config/statusline-command.sh` | `~/.claude/statusline-command.sh` | `home.file` |
@@ -41,6 +42,11 @@ cp ~/.claude/settings.json config/settings.json
   `tdd-refactor` subagents. A `tdd-guard` hook enforces the test/src boundary
   per phase. The guard's `is_test_path` patterns may need tuning per project
   layout (see `scripts/tdd-guard.sh`).
+- **design-patterns** — a decision guide for selecting, applying, and explaining
+  software design patterns (GoF creational/structural/behavioral plus
+  architectural patterns and SOLID/DRY/KISS/YAGNI), with per-category reference
+  files under `references/`. Emphasises *not* applying patterns when they aren't
+  needed.
 
 ## Using it (Home Manager flake)
 
@@ -71,11 +77,3 @@ nixpkgs rather than an external package manager. The declared MCP servers are
 injected into the wrapped `claude` binary automatically; verify with
 `claude mcp list`.
 
-## Not (yet) included
-
-- **design-patterns** — a complete decision-guide skill; drop it in under
-  `skills/design-patterns/` and add
-  `programs.claude-code.skills.design-patterns = ../skills/design-patterns;`.
-- **extract-wisdom** — builds a `.venv` inside its own skill directory at
-  runtime, which a read-only store symlink forbids; it needs to stay unmanaged
-  or use a writable copy rather than a naïve symlink.

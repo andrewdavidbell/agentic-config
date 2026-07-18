@@ -33,6 +33,7 @@
     # Skills -> ~/.claude/skills/<name>/ (recursive). Other skills already in
     # ~/.claude/skills (e.g. extract-wisdom) are left untouched.
     skills.tdd = ../skills/tdd;
+    skills.design-patterns = ../skills/design-patterns;
 
     # Subagents -> ~/.claude/agents/{tdd-red,tdd-green,tdd-refactor}.md
     agentsDir = ../agents;
