@@ -16,24 +16,44 @@ via the native `programs.claude-code` and `programs.mcp` modules
 | `agents/*.md` | `~/.claude/agents/` | `programs.claude-code.agentsDir` |
 | `scripts/tdd-guard.sh` | `~/.claude/hooks/tdd-guard` (exec) | `programs.claude-code.hooks.tdd-guard` |
 | `config/statusline-command.sh` | `~/.claude/statusline-command.sh` | `home.file` |
+| settings (permissions, sandbox, effort, statusline) | `~/.claude/settings.json` | `programs.claude-code.settings` |
 | MCP servers (`MCP_DOCKER`, `nixos`) | wrapped `claude` binary + `~/.config/mcp/mcp.json` | `programs.mcp.servers` + `enableMcpIntegration` |
-| `config/settings.json` | **not deployed** — reference copy only | — |
-| `presets/lmstudio.settings.json` | **not deployed** — swap-in preset for local LM Studio | — |
+| LM Studio provider env | `claude-lmstudio` launcher on `$PATH` | `writeShellScriptBin` in `modules/claude-code.nix` |
 
-### Why `settings.json` isn't deployed
+The `settings` attrset in `modules/claude-code.nix` is the single source of
+truth — there is no separate `settings.json` file to keep in sync.
 
-Home Manager symlinks are read-only. `programs.claude-code.settings` would make
-`~/.claude/settings.json` a read-only store path, so in-app changes (`/model`,
-effort level, etc.) would be reverted on the next rebuild. Leaving `settings`
-unset keeps the live file writable. The copy in `config/settings.json` is a
-sanitised snapshot for reference/reproducibility.
+### Managed `settings.json`
 
-To refresh the snapshot after changing settings in the app:
+`settings.json` is deployed as a read-only symlink into the Nix store. The one
+trade-off is that in-app `/model` changes no longer persist across sessions;
+model selection is pinned declaratively (`settings.model`) instead. This is a
+deliberate choice — interactive model switching isn't needed here, and
+everything else that changes at runtime lives in **writable** files that the
+managed symlink doesn't touch:
+
+- **permission approvals** (`/allow`) → `~/.claude/settings.local.json`
+  (git-ignored)
+- **onboarding / history / MCP-trust state** → `~/.claude.json`
+
+On the first rebuild after switching to managed settings, an existing writable
+`~/.claude/settings.json` is moved aside to `settings.json.backup` by Home
+Manager's `backupFileExtension` rather than causing an activation conflict.
+
+### Providers (LM Studio, …)
+
+A non-Anthropic provider is just a set of environment overrides
+(`ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN`, the `ANTHROPIC_*_MODEL` set), so
+each one is a thin launcher rather than a separate settings file. The module
+generates a `claude-<name>` binary per entry in `providerEnvs` that exports the
+env and execs the MCP-wrapped `claude`:
 
 ```sh
-cp ~/.claude/settings.json config/settings.json
-# then sanitise any absolute /Users/... paths to ~/ before committing
+claude            # Anthropic (default)
+claude-lmstudio   # local LM Studio server on 127.0.0.1:1234
 ```
+
+Add a provider by extending `providerEnvs` in `modules/claude-code.nix`.
 
 ## Skills
 
