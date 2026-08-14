@@ -1,3 +1,4 @@
 - Always use British English spelling and grammar conventions
 - Always use `uv` as the package manager for Python projects
 - Always use `ruff` as the linter for Python projects
+- When a repository contains an `AGENTS.md` file, treat it as the canonical source of shared repository instructions. Reserve any repo-level `CLAUDE.md` for Claude-specific guidance only, and have it reference `AGENTS.md` (e.g. `@AGENTS.md`) rather than duplicating its contents.
