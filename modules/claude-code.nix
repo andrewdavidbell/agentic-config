@@ -14,6 +14,11 @@
 #   - the `claude` binary (nix-provided, MCP servers injected -> finalPackage)
 #   - the `claude-lmstudio` binary (finalPackage wrapped with LM Studio env)
 #
+# MCP servers are declared once in ../data/mcp-servers.nix and wired to every
+# agent by modules/mcp.nix (imported below). Consumers who additionally want
+# LM Studio or omlx wired should also `imports = [ … .homeManagerModules.mcp ];`
+# and flip `programs.agenticConfig.mcp.forLmStudio` / `.forOmlx`.
+#
 # settings.json is now managed (read-only symlink into the store). The
 # trade-off: in-app `/model` changes no longer persist across sessions — model
 # selection is instead pinned declaratively (see `settings.model` below) or
@@ -62,6 +67,16 @@ let
   providerBins = lib.mapAttrsToList mkProviderBin providerEnvs;
 in
 {
+  imports = [
+    ./mcp.nix
+    ./skills.nix
+  ];
+
+  # Turn on the shared MCP writer for Claude by default; other agents opt in
+  # explicitly from the consumer's home config.
+  programs.agenticConfig.mcp.enable = lib.mkDefault true;
+  programs.agenticConfig.mcp.forClaude = lib.mkDefault true;
+
   programs.claude-code = {
     enable = true;
 
@@ -152,22 +167,9 @@ in
     hooks.tdd-guard = builtins.readFile ../scripts/tdd-guard.sh;
   };
 
-  programs.mcp = {
-    enable = true;
-    servers = {
-      # Docker MCP gateway (aggregates MCP servers configured in Docker Desktop).
-      MCP_DOCKER = {
-        command = "docker";
-        args = [ "mcp" "gateway" "run" ];
-      };
-      # NixOS/nixpkgs/home-manager/darwin query server. `uvx` comes from
-      # programs.uv (already enabled in your home config).
-      nixos = {
-        command = "uvx";
-        args = [ "mcp-nixos" ];
-      };
-    };
-  };
+  # MCP servers are now declared in ../data/mcp-servers.nix and wired by
+  # ./mcp.nix (imported above). To add/remove per machine, override
+  # `programs.agenticConfig.mcp.servers` from the consumer's home config.
 
   # Per-provider launcher binaries (claude-lmstudio, ...) alongside `claude`.
   home.packages = providerBins;
