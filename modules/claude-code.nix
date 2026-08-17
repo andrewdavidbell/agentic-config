@@ -12,60 +12,18 @@
 #   - hooks/tdd-guard via `hooks.tdd-guard`
 #   - statusline-command.sh via `home.file`
 #   - the `claude` binary (nix-provided, MCP servers injected -> finalPackage)
-#   - the `claude-lmstudio` binary (finalPackage wrapped with LM Studio env)
 #
 # MCP servers are declared once in ../data/mcp-servers.nix and wired to every
-# agent by modules/mcp.nix (imported below). Consumers who additionally want
-# LM Studio or omlx wired should also `imports = [ … .homeManagerModules.mcp ];`
-# and flip `programs.agenticConfig.mcp.forLmStudio` / `.forOmlx`.
+# agent by modules/mcp.nix (imported below).
 #
 # settings.json is now managed (read-only symlink into the store). The
 # trade-off: in-app `/model` changes no longer persist across sessions — model
-# selection is instead pinned declaratively (see `settings.model` below) or
-# overridden per-provider by the wrapper binaries. Everything users actually
-# mutate at runtime lives elsewhere and is unaffected: permission approvals go
-# to ~/.claude/settings.local.json (writable, git-ignored), and onboarding /
-# history / MCP-trust state go to ~/.claude.json (writable).
-#
-# Providers other than Anthropic are just environment overrides, so each is a
-# thin wrapper around `finalPackage` rather than a separate settings file. Add a
-# provider by extending `providerEnvs` below.
-{ config, lib, pkgs, ... }:
-let
-  cfg = config.programs.claude-code;
-
-  # Per-provider environment overrides. The shared settings.json (permissions,
-  # sandbox, statusline, effort) applies to every wrapper; only these env vars
-  # differ. Shell env > settings.json `env`, so exporting here wins.
-  providerEnvs = {
-    # Local LM Studio server (OpenAI-compatible Anthropic endpoint on :1234).
-    # `default_model` routes every tier to whatever model LM Studio has loaded.
-    lmstudio = {
-      ANTHROPIC_BASE_URL = "http://127.0.0.1:1234";
-      ANTHROPIC_AUTH_TOKEN = "dummy";
-      API_TIMEOUT_MS = "3000000";
-      CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1";
-      CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
-      ANTHROPIC_MODEL = "default_model";
-      ANTHROPIC_SMALL_FAST_MODEL = "default_model";
-      ANTHROPIC_DEFAULT_HAIKU_MODEL = "default_model";
-      ANTHROPIC_DEFAULT_SONNET_MODEL = "default_model";
-      ANTHROPIC_DEFAULT_OPUS_MODEL = "default_model";
-      CLAUDE_CODE_SUBAGENT_MODEL = "default_model";
-    };
-  };
-
-  # claude-<provider>: export the provider env, then exec the MCP-wrapped claude
-  # (finalPackage) so these sessions keep the same MCP servers and flags.
-  mkProviderBin = name: env:
-    pkgs.writeShellScriptBin "claude-${name}" ''
-      ${lib.concatStringsSep "\n"
-        (lib.mapAttrsToList (k: v: "export ${k}=${lib.escapeShellArg v}") env)}
-      exec ${cfg.finalPackage}/bin/claude "$@"
-    '';
-
-  providerBins = lib.mapAttrsToList mkProviderBin providerEnvs;
-in
+# selection is instead pinned declaratively (see `settings.model` below).
+# Everything users actually mutate at runtime lives elsewhere and is
+# unaffected: permission approvals go to ~/.claude/settings.local.json
+# (writable, git-ignored), and onboarding / history / MCP-trust state go to
+# ~/.claude.json (writable).
+{ lib, pkgs, ... }:
 {
   imports = [
     ./mcp.nix
@@ -170,9 +128,6 @@ in
   # MCP servers are now declared in ../data/mcp-servers.nix and wired by
   # ./mcp.nix (imported above). To add/remove per machine, override
   # `programs.agenticConfig.mcp.servers` from the consumer's home config.
-
-  # Per-provider launcher binaries (claude-lmstudio, ...) alongside `claude`.
-  home.packages = providerBins;
 
   # The status line script is static (Claude never rewrites it), so a read-only
   # symlink is safe. settings.json references it by absolute ~/.claude path,
