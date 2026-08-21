@@ -7,22 +7,29 @@
 #   args     = list of string arguments
 #   env      = optional attrset of environment variables (defaults to {})
 #
-# Machines that lack a server (e.g. Rancher-only hosts have no Docker MCP
-# gateway) subtract entries via `builtins.removeAttrs …` when overriding
-# `programs.agenticConfig.mcp.servers` in their home config.
+# All servers run as direct processes (npx/uvx), so this list is portable
+# across machines without requiring Docker Desktop. To disable a server on a
+# specific host, override `programs.agenticConfig.mcp.servers` with
+# `builtins.removeAttrs … [ "name" ]` in that machine's home config.
 {
-  # Docker MCP gateway — aggregates the MCP servers enabled via
-  # Docker Desktop's MCP Toolkit (see ~/.docker/mcp/registry.yaml).
-  # Requires Docker Desktop; not available on Rancher-only hosts.
-  MCP_DOCKER = {
-    command = "docker";
-    args = [ "mcp" "gateway" "run" ];
-  };
-
   # NixOS / nixpkgs / home-manager / darwin query server.
   # `uvx` is provided by programs.uv.
   nixos = {
     command = "uvx";
     args = [ "mcp-nixos" ];
+  };
+
+  # Context7 (Upstash) — narrowed library-docs fetch by resolved library ID.
+  # More targeted than blind WebFetch; no API key required.
+  context7 = {
+    command = "npx";
+    args = [ "-y" "@upstash/context7-mcp" ];
+  };
+
+  # AWS documentation — search + structured section reads over docs.aws.amazon.com.
+  # No API key required.
+  aws-documentation = {
+    command = "uvx";
+    args = [ "awslabs.aws-documentation-mcp-server" ];
   };
 }
