@@ -32,4 +32,13 @@
     command = "uvx";
     args = [ "awslabs.aws-documentation-mcp-server" ];
   };
+
+  # Headroom — token-compression MCP. Requires the `headroom` CLI on PATH,
+  # installed per-machine via `uv tool install "headroom-ai[all]"` (see
+  # docs/headroom-setup.md in the consumer flake). Hosts without the CLI
+  # will show this entry as unavailable — override with removeAttrs there.
+  headroom = {
+    command = "headroom";
+    args = [ "mcp" "serve" ];
+  };
 }
