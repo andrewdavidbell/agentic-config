@@ -1,25 +1,29 @@
-# Home Manager module: publish agent-agnostic Skills at a shared,
-# discoverable location so any tool that reads instruction files
-# (opencode via AGENTS.md, future agents) can reference them.
+# Home Manager module: publish agent-agnostic Skills at the emerging
+# shared discovery path ~/.agents/skills/, so tools that adopt the
+# convention (OpenCode ≥ 1.15 auto-discovers; future agents likely)
+# pick them up with no extra wiring. Claude Code's own skill wiring
+# (~/.claude/skills/<name>/) is unchanged — it stays in
+# modules/claude-code.nix via programs.claude-code.skills.*.
 #
-# Claude Code's own skill wiring (~/.claude/skills/<name>/) is unchanged —
-# it stays in modules/claude-code.nix via programs.claude-code.skills.*.
-# This module only exposes the shared subtree.
+# Skills are published one entry per skill so user-created symlinks
+# for third-party skills can coexist in ~/.agents/skills/ alongside
+# the bespoke ones.
 #
 #   programs.agenticConfig.skills = {
 #     enable = true;
 #     # path defaults to ../skills relative to this repo
 #   };
-#
-# Result: ~/.local/share/agentic-skills/ → read-only symlink into the
-# nix store containing tdd/, design-patterns/, etc.
 { config, lib, ... }:
 let
   cfg = config.programs.agenticConfig.skills;
+  skillNames =
+    builtins.attrNames
+      (lib.filterAttrs (_: t: t == "directory")
+        (builtins.readDir cfg.path));
 in
 {
   options.programs.agenticConfig.skills = {
-    enable = lib.mkEnableOption "publish shared Skills to xdg.dataHome/agentic-skills";
+    enable = lib.mkEnableOption "publish shared Skills to ~/.agents/skills/";
 
     path = lib.mkOption {
       type = lib.types.path;
@@ -33,15 +37,18 @@ in
       readOnly = true;
       description = ''
         Resolved absolute path where skills are installed
-        (`''${xdg.dataHome}/agentic-skills`). Reference this from
-        agent-specific AGENTS.md files to point tools at the subtree.
+        (`''${config.home.homeDirectory}/.agents/skills`). OpenCode
+        and other agent-agnostic harnesses read from here directly.
       '';
     };
   };
 
   config = lib.mkIf cfg.enable {
-    xdg.dataFile."agentic-skills".source = cfg.path;
+    home.file = lib.listToAttrs (map (name: {
+      name = ".agents/skills/${name}";
+      value.source = cfg.path + "/${name}";
+    }) skillNames);
     programs.agenticConfig.skills.installedPath =
-      "${config.xdg.dataHome}/agentic-skills";
+      "${config.home.homeDirectory}/.agents/skills";
   };
 }
