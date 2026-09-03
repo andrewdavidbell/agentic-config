@@ -1,0 +1,23 @@
+[
+  {"query": "Should I use a Singleton for my application config, or is there a better way in Python?", "should_trigger": true},
+  {"query": "Refactor this payment processor to use the Strategy pattern so we can plug in Stripe, PayPal, and Adyen at runtime.", "should_trigger": true},
+  {"query": "How do I implement the Observer pattern so subscribers get notified when the stock price changes? Current class: `class Stock:\n    def __init__(self, symbol):\n        self.symbol = symbol\n        self.price = 0`.", "should_trigger": true},
+  {"query": "I have a 12-branch if/elif dispatching on `payment_type` inside `Order.charge()`. Is there a design pattern that would clean this up?", "should_trigger": true},
+  {"query": "What's the right pattern for a text editor with undo and redo?", "should_trigger": true},
+  {"query": "Review this class for SOLID violations: `class Report:\n    def fetch(self): ...\n    def calculate_totals(self): ...\n    def render_pdf(self): ...\n    def email(self, to): ...`", "should_trigger": true},
+  {"query": "Is this a DRY violation worth extracting? I have `def is_admin(user): return user.role == 'admin'` and `def is_owner(user): return user.role == 'owner'` in two different modules.", "should_trigger": true},
+  {"query": "Design a notification system that supports email, SMS, and push. How should I structure the classes so adding a fourth channel doesn't touch existing code?", "should_trigger": true},
+  {"query": "I want to decouple my UI code from the data-fetching layer so I can test the UI with fake data. What's a clean way to structure this?", "should_trigger": true},
+  {"query": "Should I use dependency injection to wire up my `OrderService`'s database and email dependencies, or is that YAGNI for a script this small?", "should_trigger": true},
+
+  {"query": "Rename the variable `usr` to `user` throughout `handlers.py` — no design change, just consistent naming.", "should_trigger": false},
+  {"query": "Refactor this loop to use `enumerate` instead of a manual index variable: `for i in range(len(items)):\n    print(i, items[i])`.", "should_trigger": false},
+  {"query": "This function throws `AttributeError` when `data` is None. Add a null check on line 42 of `parse_response()`.", "should_trigger": false},
+  {"query": "The bug pattern here is that we're mutating a dict while iterating over it — fix this specific instance inside `sync_users()`.", "should_trigger": false},
+  {"query": "What regex pattern matches ISO 8601 dates like `2026-09-03` but not `2026-9-3`?", "should_trigger": false},
+  {"query": "How do I use Python's `dataclasses` module — what's the correct syntax for a mutable default via `field(default_factory=...)`?", "should_trigger": false},
+  {"query": "How should I structure my repo's directory layout — `src/` layout or flat package at the top level?", "should_trigger": false},
+  {"query": "The test in `test_sync.py` is flaky — passes locally, fails in CI about one run in ten. Help me find the root cause.", "should_trigger": false},
+  {"query": "Format this Python file with `ruff format` and fix any remaining lint warnings.", "should_trigger": false},
+  {"query": "Convert this callback-based function to async/await: `def load(cb):\n    fetch(lambda r: cb(parse(r)))`.", "should_trigger": false}
+]

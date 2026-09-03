@@ -1,6 +1,6 @@
 ---
 name: design-patterns
-description: "Apply software design patterns when designing, refactoring, or reviewing code. Use this skill when the user asks about object-oriented design, requests architectural guidance, mentions a specific pattern (Singleton, Factory, Observer, Strategy, etc.), asks to refactor code for better structure, wants to apply SOLID/DRY/KISS/YAGNI principles, or is designing a system from scratch. Covers the Gang of Four (GoF) creational, structural, and behavioral patterns plus architectural patterns like MVC, Repository, CQRS, Event Sourcing, and Dependency Injection. Also use when reviewing code for anti-patterns or excessive complexity that needs simplification."
+description: "Guide software design pattern selection and implementation. Fire on queries like 'should I use X pattern?', 'what pattern fits this?', 'refactor to use Y', 'review this for SOLID/DRY', or 'how do I decouple/design this cleanly?'. Do NOT use for routine bug fixes, syntax refactors, or tool/library questions."
 ---
 
 # Software Design Patterns
@@ -95,8 +95,6 @@ Identify your problem in the left column, then load the referenced file for full
 
 These mistakes appear when patterns are applied without need:
 
-- **Singleton everywhere.** Singletons are global state in disguise. Prefer dependency injection. Only use Singleton when there's a hard invariant that exactly one instance must exist process-wide (and even then, inject it).
-- **Factory for everything.** `new User(name)` is fine. A Factory adds value only when construction logic is non-trivial or varies.
 - **Premature abstraction.** Introducing an interface for one implementation "in case we add another" is YAGNI. Add the interface when the second implementation appears.
 - **Pattern stacking.** Wrapping a Decorator around a Proxy around an Adapter to a Facade — each layer must justify itself. If you can't explain why a layer exists, remove it.
 - **Patterns instead of language features.** Don't write Java-style Iterators in Python (use generators). Don't write Strategy in a language with first-class functions (just pass the function). Don't write Singleton in a module-based language (use a module).

@@ -102,34 +102,14 @@ class UserRepository(ABC):
     @abstractmethod
     def delete(self, user_id: int) -> None: ...
 
-# Concrete: SQL implementation.
+# Concrete: SQL implementation — bodies elided; each is a single query.
 class SQLUserRepository(UserRepository):
     def __init__(self, connection):
         self._conn = connection
-
-    def get(self, user_id):
-        row = self._conn.execute("SELECT id, email, name FROM users WHERE id = %s", (user_id,)).fetchone()
-        return User(*row) if row else None
-
-    def find_by_email(self, email):
-        row = self._conn.execute("SELECT id, email, name FROM users WHERE email = %s", (email,)).fetchone()
-        return User(*row) if row else None
-
-    def save(self, user):
-        if user.id is None:
-            user.id = self._conn.execute(
-                "INSERT INTO users (email, name) VALUES (%s, %s) RETURNING id",
-                (user.email, user.name),
-            ).fetchone()[0]
-        else:
-            self._conn.execute(
-                "UPDATE users SET email=%s, name=%s WHERE id=%s",
-                (user.email, user.name, user.id),
-            )
-        return user
-
-    def delete(self, user_id):
-        self._conn.execute("DELETE FROM users WHERE id = %s", (user_id,))
+    def get(self, user_id): ...            # SELECT ... WHERE id = %s
+    def find_by_email(self, email): ...    # SELECT ... WHERE email = %s
+    def save(self, user): ...              # INSERT if user.id is None, else UPDATE
+    def delete(self, user_id): ...         # DELETE WHERE id = %s
 
 # Concrete: in-memory for tests.
 class InMemoryUserRepository(UserRepository):
@@ -441,16 +421,5 @@ Each consumer evolves independently; new consumers can be added without changing
 - **Choreography vs orchestration.** EDA is choreography — no one is in charge. For complex multi-step workflows, an orchestrator (saga manager, workflow engine like Temporal) is often clearer.
 
 ---
-
-## Choosing among architectural patterns
-
-| Question | Pattern |
-|---|---|
-| "How do I make this class testable / loosely coupled?" | Dependency Injection |
-| "How do I abstract persistence?" | Repository |
-| "How do I structure my app's UI/data/control split?" | MVC / MVP / MVVM |
-| "How do I separate read and write concerns?" | CQRS |
-| "How do I get a complete audit log and time travel?" | Event Sourcing |
-| "How do services react to each other without coupling?" | Event-Driven Architecture |
 
 **Combining patterns:** These compose naturally — a service might use DI to wire a Repository that hides Event Sourcing under a CQRS read/write split, consuming and producing events on an Event-Driven bus. Each layer must pay for itself; add only what the problem demands.
