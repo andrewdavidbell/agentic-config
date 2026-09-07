@@ -13,6 +13,11 @@
     homeManagerModules.mcp = import ./modules/mcp.nix;
     homeManagerModules.skills = import ./modules/skills.nix;
 
+    # Opencode-specific wiring (currently: TDD sub-agents, /tdd command,
+    # phase-guard plugin). Opt-in via
+    # `programs.agenticConfig.opencode.tdd.enable = true;`.
+    homeManagerModules.opencode = import ./modules/opencode.nix;
+
     # Raw data — importable without the module system, so external flakes can
     # compose these into their own configs (e.g. rendering opencode.jsonc).
     lib.mcpServers = import ./data/mcp-servers.nix;

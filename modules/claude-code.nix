@@ -8,7 +8,9 @@
 #   - CLAUDE.md      via `context`
 #   - settings.json  via `settings`
 #   - skills/tdd/    via `skills.tdd`
-#   - agents/*.md    via `agentsDir`
+#   - agents/tdd-*.md via `agentsDir` (generated from
+#     ../skills/tdd/references/roles/*.md — single source of truth,
+#     shared with ./opencode.nix)
 #   - hooks/tdd-guard via `hooks.tdd-guard`
 #   - statusline-command.sh via `home.file`
 #   - the `claude` binary (nix-provided, MCP servers injected -> finalPackage)
@@ -24,16 +26,54 @@
 # (writable, git-ignored), and onboarding / history / MCP-trust state go to
 # ~/.claude.json (writable).
 { lib, pkgs, ... }:
+let
+  tddRoles = import ../data/tdd-roles.nix;
+  tddSkillPath = ../skills/tdd;
+
+  roleBody = name:
+    builtins.readFile (tddSkillPath + "/references/roles/${name}.md");
+
+  mkClaudeAgent = name:
+    let role = tddRoles.${name};
+    in pkgs.writeText "tdd-${name}.md" ''
+      ---
+      name: tdd-${name}
+      description: "${role.description}"
+      tools: Read, Grep, Glob, Edit, Write, Bash
+      model: inherit
+      maxTurns: ${toString role.maxTurns}
+      hooks:
+        PreToolUse:
+          - matcher: "Edit|Write"
+            hooks:
+              - type: command
+                command: "$HOME/.claude/hooks/tdd-guard ${role.guardMode}"
+      ---
+
+      ${roleBody name}'';
+
+  # Directory of generated subagent files, consumed by
+  # programs.claude-code.agentsDir.
+  tddAgentsDir = pkgs.linkFarm "tdd-agents" (map (name: {
+    name = "tdd-${name}.md";
+    path = mkClaudeAgent name;
+  }) (builtins.attrNames tddRoles));
+in
 {
   imports = [
     ./mcp.nix
     ./skills.nix
+    ./opencode.nix
   ];
 
   # Turn on the shared MCP writer for Claude by default; other agents opt in
   # explicitly from the consumer's home config.
   programs.agenticConfig.mcp.enable = lib.mkDefault true;
   programs.agenticConfig.mcp.forClaude = lib.mkDefault true;
+
+  # Opencode wiring is imported but not enabled by default — machines that
+  # actually run Opencode opt in from their home config with:
+  #   programs.agenticConfig.opencode.tdd.enable = true;
 
   programs.claude-code = {
     enable = true;
@@ -118,7 +158,9 @@
     skills.design-patterns = ../skills/design-patterns;
 
     # Subagents -> ~/.claude/agents/{tdd-red,tdd-green,tdd-refactor}.md
-    agentsDir = ../agents;
+    # Files are generated at Nix eval time from ../skills/tdd/references/roles/*.md
+    # + per-role metadata in ../data/tdd-roles.nix (see the `let` block above).
+    agentsDir = tddAgentsDir;
 
     # TDD phase-boundary guard -> executable ~/.claude/hooks/tdd-guard.
     # The tdd subagents reference it by absolute path in their PreToolUse hooks.
