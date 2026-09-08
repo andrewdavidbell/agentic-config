@@ -18,7 +18,7 @@
 let
   cfg = config.programs.agenticConfig.mcp;
 
-  # Claude-shape (also what LM Studio and omlx accept):
+  # Claude-shape (also what LM Studio, omlx and Kiro accept):
   # { mcpServers = { <name> = { command, args, env? }; ... }; }
   claudeShape = {
     mcpServers = lib.mapAttrs (_: srv:
@@ -85,6 +85,18 @@ in
       description = "Manage ~/.cache/lm-studio/mcp.json (read-only symlink into the nix store).";
     };
 
+    claudeShape = lib.mkOption {
+      type = lib.types.attrs;
+      readOnly = true;
+      description = ''
+        Computed `{ mcpServers = { <name> = { command, args, env? }; }; }`
+        fragment. This is the de-facto standard shape: Claude Code, LM
+        Studio, omlx and Kiro all consume it verbatim, so agent modules
+        that write one of those files should render this rather than
+        rebuilding the mapping.
+      '';
+    };
+
     opencodeConfig = lib.mkOption {
       type = lib.types.attrs;
       readOnly = true;
@@ -96,6 +108,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    programs.agenticConfig.mcp.claudeShape = claudeShape;
     programs.agenticConfig.mcp.opencodeConfig = opencodeShape;
 
     programs.mcp = lib.mkIf cfg.forClaude {

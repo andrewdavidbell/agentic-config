@@ -18,9 +18,9 @@ via the native `programs.claude-code` and `programs.mcp` modules
 | `config/statusline-command.sh` | `~/.claude/statusline-command.sh` | `home.file` |
 | settings (permissions, sandbox, effort, statusline) | `~/.claude/settings.json` | `programs.claude-code.settings` |
 | MCP servers (`MCP_DOCKER`, `nixos`) | wrapped `claude` binary + `~/.config/mcp/mcp.json` | `programs.mcp.servers` + `enableMcpIntegration` |
-| LM Studio provider env | `claude-lmstudio` launcher on `$PATH` | `writeShellScriptBin` in `modules/claude-code.nix` |
+| LM Studio provider env | `claude-lmstudio` launcher on `$PATH` | `writeShellScriptBin` in `modules/agents/claude-code.nix` |
 
-The `settings` attrset in `modules/claude-code.nix` is the single source of
+The `settings` attrset in `modules/agents/claude-code.nix` is the single source of
 truth — there is no separate `settings.json` file to keep in sync.
 
 ### Managed `settings.json`
@@ -80,10 +80,50 @@ agentic-config.url = "github:andrewdavidbell/agentic-config";
 
 ```nix
 # your home module
-{ inputs, ... }: {
+{ inputs, pkgs, ... }: {
   imports = [ inputs.agentic-config.homeManagerModules.default ];
+
+  programs.agenticConfig = {
+    skills.enable          = true;   # publish ~/.agents/skills/
+    agents.claude.enable   = true;
+    agents.opencode.enable = true;
+    agents.kiro.enable     = true;
+  };
+
+  # Agent *packages* stay in your config -- this flake owns config only.
+  home.packages = [ pkgs.opencode ];
 }
 ```
+
+Every agent is off by default; importing the module alone wires nothing.
+
+### Config here, packages there
+
+This flake owns agent *configuration* (MCP server lists, skills, subagents,
+slash commands, baseline config files). It deliberately does not own agent
+*packages*: version pinning is a machine-level concern, and some agents (Kiro)
+ship as Homebrew casks that Home Manager cannot install at all.
+
+Where a package is visible to Home Manager the agent module asserts on it, so
+enabling `agents.opencode.enable` without `pkgs.opencode` in `home.packages`
+fails the build with an explicit message. **Kiro cannot be guarded** — a cask
+is invisible at evaluation time, so enabling it without the cask installed
+silently lays down config nothing reads.
+
+### Module layout
+
+| Module | Owns |
+| --- | --- |
+| `modules/default.nix` | neutral entrypoint; imports everything below |
+| `modules/mcp.nix` | shared server list + per-agent shapes (`claudeShape`, `opencodeConfig`) |
+| `modules/skills.nix` | publishes skills to `~/.agents/skills/` |
+| `modules/agents/claude-code.nix` | `~/.claude/*` and the wrapped `claude` binary |
+| `modules/agents/opencode.nix` | `~/.config/opencode/*`, `$OPENCODE_CONFIG` overlay, TDD surface |
+| `modules/agents/kiro.nix` | `~/.kiro/settings/mcp.json`, `~/.kiro/skills/` |
+
+`claudeShape` is the `{ mcpServers = { … }; }` form that Claude Code, LM
+Studio, omlx **and Kiro** all consume verbatim — agent modules writing one of
+those files should render it rather than rebuilding the mapping.
 
 Then rebuild (nix-darwin example):
 

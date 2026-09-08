@@ -1,25 +1,25 @@
 {
-  description = "Andrew's Claude Code / agentic assistant configuration";
+  description = "Andrew's agentic assistant configuration (Claude Code, Opencode, Kiro)";
 
   # No inputs: modules are pure and reference the consuming home-manager
   # evaluation's `pkgs` (your nixpkgs-26.05-darwin), avoiding version skew.
   outputs = { self }: {
-    # Full Claude Code wiring (also transitively imports mcp + skills modules).
-    homeManagerModules.default = import ./modules/claude-code.nix;
-    homeManagerModules.claude-code = self.homeManagerModules.default;
+    # Neutral entrypoint: imports the shared MCP + skills modules and every
+    # agent module, all of which stay inert until the consumer opts in with
+    # `programs.agenticConfig.agents.<name>.enable = true`.
+    homeManagerModules.default = import ./modules/default.nix;
 
-    # Standalone agent-agnostic modules for consumers that only need
-    # MCP or Skills wired without pulling the Claude-specific config.
+    # Standalone modules, for consumers that want one piece without the rest.
+    # Note these do NOT pull in mcp.nix/skills.nix the way `default` does --
+    # importing an agent module alone means wiring its dependencies yourself.
     homeManagerModules.mcp = import ./modules/mcp.nix;
     homeManagerModules.skills = import ./modules/skills.nix;
-
-    # Opencode-specific wiring (currently: TDD sub-agents, /tdd command,
-    # phase-guard plugin). Opt-in via
-    # `programs.agenticConfig.opencode.tdd.enable = true;`.
-    homeManagerModules.opencode = import ./modules/opencode.nix;
+    homeManagerModules.claude-code = import ./modules/agents/claude-code.nix;
+    homeManagerModules.opencode = import ./modules/agents/opencode.nix;
+    homeManagerModules.kiro = import ./modules/agents/kiro.nix;
 
     # Raw data — importable without the module system, so external flakes can
-    # compose these into their own configs (e.g. rendering opencode.jsonc).
+    # compose these into their own configs.
     lib.mcpServers = import ./data/mcp-servers.nix;
     lib.skillsPath = ./skills;
   };
